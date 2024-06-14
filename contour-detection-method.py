@@ -14,22 +14,22 @@ def count_cell_colonies(panorama):
     # Apply GaussianBlur to reduce noise and improve detection accuracy
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 
-    # Initiate ORB detector
-    orb = cv2.ORB_create()
+    # Threshold the image to create a binary image
+    _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-    # Find the keypoints and descriptors with ORB
-    keypoints, descriptors = orb.detectAndCompute(blurred, None)
+    # Perform morphological operations to remove small noise and emphasize the features
+    kernel = np.ones((3, 3), np.uint8)
+    morphed = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=2)
 
-    # Use Brute Force Matcher to match descriptors
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    matches = bf.match(descriptors, descriptors)
+    # Find contours in the binary image
+    contours, _ = cv2.findContours(morphed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Sort the matches based on their distances
-    matches = sorted(matches, key=lambda x: x.distance)
-
-    # Placeholder logic for now, counts colonies based on the num of keypoints
-    # ***PENDING LOGIC ADJUSTMENTS AFTER TESTING
-    num_colonies = len(keypoints) // 50  # Placeholder counting logic (requirement for something to be considered a colony)
+    # Filter contours based on size to identify cell colonies
+    num_colonies = 0
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if area > 50:  # Assuming each colony has an area greater than a certain threshold
+            num_colonies += 1
 
     return num_colonies
 
